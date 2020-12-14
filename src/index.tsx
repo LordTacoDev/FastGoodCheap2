@@ -1,17 +1,55 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import React, { FunctionComponent, useState, useEffect } from "react"
+import ReactDOM from "react-dom"
+import ActiveTextContainer from "./ActiveText"
+import Option from "./Option"
+import useCreateTexts, { TextsContext, ChangeTextsContext } from "./Texts"
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root')
-);
+const Space = () => <div />
+const colors = ["#009975", "#145374", "#c72c41"]
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+const numOptions = (() => {
+  const URLparams = new URLSearchParams(window.location.search)
+  const numOption = URLparams.get("num")
+  return Number(numOption) || 3
+})()
+
+const defaultTexts = (() => {
+  const defaults = ["Bueno", "Bonito", "Barato"]
+  const missing = Math.max(0, numOptions - 3)
+  return defaults.concat(Array(missing).fill("?"))
+})()
+
+const App: FunctionComponent = () => {
+  const [texts, changeText] = useCreateTexts(defaultTexts.slice(0, numOptions))
+  const [isVisible, setVisible] = useState(false)
+
+  useEffect(() => {
+    setTimeout(() => setVisible(true), 40)
+  }, [])
+
+  const style = {
+    gridTemplateRows: `1fr ${"auto ".repeat(numOptions)} 2fr auto`,
+    visibility: isVisible ? "initial" : ("hidden" as "initial" | "hidden"),
+  }
+
+  return (
+    <>
+      <TextsContext.Provider value={texts}>
+        <main style={style}>
+          <ChangeTextsContext.Provider value={changeText}>
+            <ActiveTextContainer numOption={numOptions}>
+              <Space />
+              {[...Array(numOptions).keys()].map(id => (
+                <Option key={id} id={id} color={colors[id % colors.length]} />
+              ))}
+              <Space />
+            </ActiveTextContainer>
+          </ChangeTextsContext.Provider>
+        </main>
+      </TextsContext.Provider>
+    </>
+  )
+}
+
+const DOM_ID = document.getElementById("root")
+ReactDOM.render(<App />, DOM_ID)
